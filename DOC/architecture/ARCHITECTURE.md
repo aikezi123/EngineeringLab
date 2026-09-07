@@ -57,11 +57,12 @@ EngineeringLab 是个人 C++ 工程技术持续学习与实验平台。LearnOpen
 | Target | 类型 | 主要职责 | 直接依赖 |
 | --- | --- | --- | --- |
 | `EngineeringWorkbench` | Executable | Qt 综合学习工作台与对象装配 | `englab::ui`、`englab::application`、`englab::camera_galaxy`、`englab::logging`、Qt6 Widgets |
-| `OpenGLLessons` | Executable | LearnOpenGL 课程导航器与课程入口 | `englab::opengl_lessons`、Qt6 Widgets |
+| `OpenGLLessons` | Executable | LearnOpenGL 课程导航器与课程入口 | `englab::opengl_lessons`、`englab::lesson_launcher`、Qt6 Widgets |
+| `engineeringlab_lesson_launcher` | Static | Qt 课程导航界面与课程子进程控制 | Qt6 Widgets（PUBLIC）、`englab::opengl_lessons`（PRIVATE） |
 | `engineeringlab_opengl_lessons` | Static | 收集并编译当前 OpenGL 课程 | `englab::graphics_opengl`、GLAD、GLFW、OpenGL、GLM、stb_image |
-| `engineeringlab_ui` | Static | Qt/OpenGL 显示原型、相机与轨迹页面 | `englab::application`、`englab::domain`、Qt/OpenGL UI 依赖 |
+| `engineeringlab_ui` | Static | Qt/OpenGL 显示原型、相机与轨迹页面 | `englab::application`、`englab::domain`、`englab::diagnostics`、Qt/OpenGL UI 依赖 |
 | `engineeringlab_graphics_opengl` | Static | 当前课程使用的 OpenGL Shader 技术能力 | GLAD、OpenGL |
-| `engineeringlab_camera_galaxy` | Static | 大恒相机适配器 | `englab::application`、`Galaxy::SDK` |
+| `engineeringlab_camera_galaxy` | Static | 大恒相机适配器 | `englab::application`、`englab::diagnostics`、`Galaxy::SDK` |
 | `engineeringlab_concurrency` | Static | 不依赖 GUI/OpenGL 的线程池 | `Threads::Threads` |
 | `engineeringlab_logging` | Static | spdlog 日志后端 | `englab::diagnostics`、vcpkg `spdlog::spdlog`（PRIVATE） |
 | `engineeringlab_diagnostics` | Interface | 日志端口和模块日志门面 | vcpkg `fmt::fmt`（INTERFACE） |
@@ -84,13 +85,13 @@ application 当前没有 `ITaskExecutor`。只有实际 application service 出�
 
 `application/diagnostics` 定义 `ILogger`、日志级别、记录和源码位置等项目类型，形成不暴露具体日志后端类型的 `englab::diagnostics` 接口 target；`ModuleLogger` 通过 fmt 提供 C++17 格式化。`infrastructure/logging` 用 spdlog 实现该端口，形成 `englab::logging` 静态库；spdlog 仅为其 PRIVATE 依赖，并通过 Pimpl 隐藏在实现文件中。
 
-`EngineeringWorkbench` 已在 `qt_main` 创建唯一的 `SpdlogLogger`，并通过 `AppComposition`、`CameraComposition` 将 `ILogger&` 注入 `CameraCaptureService`；服务持有 `ModuleLogger("camera")`，当前还没有业务日志调用。`OpenGLLessons` 和其他模块未接入，原有标准输出保持不变；domain 继续保持无日志依赖。详细配置和验证状态见[日志模块](../modules/LOGGING.md)。
+`EngineeringWorkbench` 在 `composition_root/workbench/main.cpp` 创建唯一的 `SpdlogLogger`，通过组合根将同一个 `ILogger&` 注入主窗口、相机服务、Galaxy 适配器、相机页面、图像显示控件和轨迹导出页面。各对象持有不同 component 的 `ModuleLogger`；Designer 创建的显示控件在 `setupUi()` 后延迟注入，其余使用构造函数注入。当前没有新增业务日志调用。独立的 `OpenGLLessons`、命令行工具和未装配的工具库不在工作台对象图内；domain 保持无日志依赖。详细映射和验证状态见[日志模块](../modules/LOGGING.md)。
 
-`third_party/Galaxy` 当前保存大恒 VC/C API、C++ SDK 头文件和 MSVC x64 import library。大恒运行时 DLL 不再由 CMake 查找或复制，而是直接放在 `out/build/<preset>/bin`，随 exe、pdb 等运行产物一起提交。
+`third_party/Galaxy` 当前保存大恒 VC/C API、C++ SDK 头文件、MSVC x64 import library 和运行时 DLL。组合根 CMake 在工作台构建后将 `GALAXY_RUNTIME_FILES` 复制到可执行文件目录；`out/` 下的构建产物不提交仓库。
 
 fmt 12.1.0、spdlog 1.17.0 和 GoogleTest/GoogleMock 1.17.0 由根目录的 vcpkg manifest 统一管理，依赖图通过固定的 `builtin-baseline` 复现。仓库不保存 spdlog 和 GoogleTest 的源码、头文件或二进制库；CMake 分别通过 `find_package(fmt CONFIG REQUIRED)`、`find_package(spdlog CONFIG REQUIRED)` 和 `find_package(GTest CONFIG REQUIRED)` 获取标准 target。`englab::diagnostics` 使用 fmt 提供 C++17 类型安全格式化，但不依赖具体日志后端；GoogleTest 只在 `BUILD_TESTING=ON` 时由 CMake 消费，生产 target 不得链接它。不同平台和架构由 vcpkg triplet 处理，首次构建结果可进入二进制缓存，不再维护仓库内的平台选择分支。
 
-`composition_root/qt_main.cpp` 负责初始化 Qt/OpenGL、创建进程级日志后端、把 `ILogger&` 交给 `AppComposition`，然后创建窗口并进入事件循环。`AppComposition` 负责组织模块页面，`modules/CameraComposition` 和 `modules/TrajectoryComposition` 分别装配相机与轨迹功能。`composition_root/lesson_main.cpp` 负责解析命令行参数、直接运行课程或启动 LearnOpenGL 课程导航器；导航窗口实现放在 `composition_root/lesson_launcher`。课程清单集中在 `lessons/catalog` 的 `LessonRegistry` 中。所有课程源码仍被编入同一个 `engineeringlab_opengl_lessons` 静态库，因此即使某课程没有运行，它仍必须成功编译。
+`composition_root/workbench/main.cpp` 负责初始化 Qt/OpenGL、创建进程级日志后端、把 `ILogger&` 交给 `WorkbenchComposition`，然后创建窗口并进入事件循环。`WorkbenchComposition` 负责组织模块页面，`workbench/modules/CameraComposition` 和 `workbench/modules/TrajectoryComposition` 分别装配相机与轨迹功能。`composition_root/opengl_lessons/main.cpp` 负责解析命令行参数、直接运行课程或启动 LearnOpenGL 课程导航器；导航窗口实现放在 `ui/lesson_launcher`。课程清单集中在 `lessons/catalog` 的 `LessonRegistry` 中。所有课程源码仍被编入同一个 `engineeringlab_opengl_lessons` 静态库，因此即使某课程没有运行，它仍必须成功编译。
 
 当前已经拆成两个 executable：`OpenGLLessons` 和 `EngineeringWorkbench`。教程入口和 Qt 工程入口不再共享同一个 `main.cpp`，避免手动改入口来切换运行内容。
 
@@ -105,10 +106,11 @@ main()
   ├── 设置 QSurfaceFormat，要求 OpenGL 3.3 Core Profile
   ├── 创建 QApplication
   ├── 创建 SpdlogLogger（logs/engineeringlab.log）
-  ├── AppComposition(logger) 创建 MainWindow
+  ├── WorkbenchComposition(logger) 创建 MainWindow（ui）
   │   ├── CameraComposition 装配 GalaxyCameraController 和 ILogger
-  │   │   → ICameraDevice + ModuleLogger("camera") → CameraCaptureService → CameraImageCaptureView
-  │   ├── TrajectoryComposition 创建 TrajectoryExportView
+  │   │   → GalaxyCameraController（camera.galaxy）→ CameraCaptureService（camera）
+  │   │   → CameraImageCaptureView（camera.ui）→ DisplayOpenGLImage（render）
+  │   ├── TrajectoryComposition(logger) 创建 TrajectoryExportView（trajectory）
   │   └── 将两个页面注册到 MainWindow
   ├── 显示主窗口
   └── 进入 Qt 事件循环 app.exec()
@@ -139,13 +141,13 @@ Qt 导航器和 GLFW 课程使用不同的事件循环和窗口/context 管理�
 
 | Executable | 职责 | 建议依赖 | 说明 |
 | --- | --- | --- | --- |
-| `OpenGLLessons` | 显示课程导航器或直接运行 LearnOpenGL 教程代码 | `englab::opengl_lessons`、Qt6 Widgets | 面向课程学习；导航器使用 Qt，课程仍允许使用 GLFW 教学式完整流程。 |
+| `OpenGLLessons` | 显示课程导航器或直接运行 LearnOpenGL 教程代码 | `englab::opengl_lessons`、`englab::lesson_launcher`、Qt6 Widgets | 面向课程学习；导航器使用 Qt，课程仍允许使用 GLFW 教学式完整流程。 |
 | `EngineeringWorkbench` | 运行 Qt/OpenGL 工程原型 | `englab::ui`、`englab::camera_galaxy`、`englab::logging` | 面向相机图像、点云、轨迹等 Qt 显示模块。 |
 
 拆分后不再需要为了切换运行内容频繁修改同一个 `main.cpp`。两个入口都属于 `composition_root` 层，并保持很薄：
 
-- lesson 入口只负责显示课程导航、通过课程名选择课程、调用课程函数或启动课程子进程、返回进程结果。
-- Qt 入口只负责设置 Qt/OpenGL 格式、创建 `QApplication`、显示顶层窗口、进入事件循环。
+- 课程入口负责解析参数、选择并调用课程函数或创建导航窗口、返回进程结果；界面布局、交互及课程子进程控制由 `ui/lesson_launcher` 负责。
+- 工作台入口负责设置 Qt/OpenGL 格式、创建 `QApplication` 和日志后端、调用工作台装配、显示顶层窗口、进入事件循环。
 - 两个入口都不能放 Shader 编译、纹理加载、相机采集、点云处理等业务或渲染细节。
 
 当前 lesson 入口已支持 Qt 导航和命令行选择：
@@ -268,7 +270,7 @@ OpenGLLessons.exe --list
 
 `app` 可以知道所有外层具体类型，但其他层不得依赖 `app`。
 
-当前入口目录名为 `composition_root/`，承担 app/Composition Root 角色。`qt_main.cpp` 保持为薄入口，应用级组织放在 `AppComposition`，各功能对象图放在 `modules/*Composition`。不要在 `main.cpp` 中堆积业务逻辑、Shader 编译、纹理加载或相机采集流程。
+当前入口目录名为 `composition_root/`，承担 app/Composition Root 角色。`workbench/main.cpp` 保持为薄入口，应用级组织放在 `WorkbenchComposition`，各功能对象图放在 `workbench/modules/*Composition`。不要在 `main.cpp` 中堆积业务逻辑、Shader 编译、纹理加载或相机采集流程。
 
 术语约定：
 
@@ -423,7 +425,7 @@ composition_root
 引入组合根以后，`MainWindow` 仍然在界面结构上包含多个子页面，但不再负责创建具体页面及其后台依赖。两种关系需要分开理解：
 
 - **界面包含关系**：`MainWindow` 的 `QStackedWidget` 保存并显示多个 `QWidget` 页面。
-- **对象创建关系**：`CameraComposition`、`TrajectoryComposition` 等模块装配类创建具体页面和后台对象，`AppComposition` 将页面注册到 `MainWindow`。
+- **对象创建关系**：`CameraComposition`、`TrajectoryComposition` 等模块装配类创建具体页面和后台对象，`WorkbenchComposition` 将页面注册到 `MainWindow`。
 
 `MainWindow` 只通过通用接口接收页面：
 
@@ -435,7 +437,7 @@ void addBusinessPage(
 );
 ```
 
-因此它不需要包含 `CameraImageCaptureView`、`TrajectoryExportView` 或 `GalaxyCameraController`。新增页面通常只修改对应模块装配类和 `AppComposition`，不会继续扩大 `MainWindow` 的具体依赖。
+因此它不需要包含 `CameraImageCaptureView`、`TrajectoryExportView` 或 `GalaxyCameraController`。新增页面通常只修改对应模块装配类和 `WorkbenchComposition`，不会继续扩大 `MainWindow` 的具体依赖。
 
 当前相机对象链的创建和所有权为：
 
@@ -453,21 +455,32 @@ CameraComposition 创建对象并转移所有权
 
 页面加入 `QStackedWidget` 后由 Qt 父子对象机制管理；页面通过 `std::unique_ptr` 拥有 service，service 再通过 `std::unique_ptr<ICameraDevice>` 拥有具体相机适配器。组合根负责创建、选择和连接对象，不要求自己长期持有所有对象。
 
-当模块数量增加时，组合根也不应退化成一个巨大的 `qt_main.cpp`。当前采用以下拆分：
+当模块数量增加时，组合根也不应退化成一个巨大的 `workbench/main.cpp`。当前采用以下拆分：
 
 ```text
 composition_root/
-├── qt_main.cpp
-├── AppComposition.h
-├── AppComposition.cpp
-└── modules/
-    ├── CameraComposition.h
-    ├── CameraComposition.cpp
-    ├── TrajectoryComposition.h
-    └── TrajectoryComposition.cpp
+├── CMakeLists.txt
+├── workbench/                       # EngineeringWorkbench 启动与装配
+│   ├── main.cpp
+│   ├── WorkbenchComposition.h
+│   ├── WorkbenchComposition.cpp
+│   └── modules/                     # 功能对象的创建与依赖连接
+│       ├── CameraComposition.h
+│       ├── CameraComposition.cpp
+│       ├── TrajectoryComposition.h
+│       └── TrajectoryComposition.cpp
+└── opengl_lessons/                  # OpenGLLessons 启动与参数解析
+    └── main.cpp
+
+ui/lesson_launcher/                 # 课程导航界面，不属于组合根
+├── CMakeLists.txt
+├── include/LessonLauncherWindow.h
+└── src/LessonLauncherWindow.cpp
 ```
 
-`qt_main.cpp` 只保留进程启动；`AppComposition` 汇总应用模块；每个 `*Composition` 只装配一个功能模块的对象图。
+`workbench/main.cpp` 只保留进程启动；`WorkbenchComposition` 汇总应用模块；每个 `*Composition` 只装配一个功能模块的对象图。
+
+课程导航器单独形成 `englab::lesson_launcher` target，由 `OpenGLLessons` 消费，不链接 `englab::ui` 或相机模块。工作台 UI 的源码收集限定在 `ui/src`、`ui/include` 和 `ui/ui`，不会将独立导航器编入工作台。两个程序的名称和输出位置保持不变。
 
 ### 3.7 assets
 
@@ -530,7 +543,7 @@ target_link_libraries(engineeringlab_graphics_opengl
 )
 
 target_link_libraries(engineeringlab_camera_galaxy
-    PUBLIC englab::application
+    PUBLIC englab::application englab::diagnostics
     PRIVATE Galaxy::SDK
 )
 
@@ -556,7 +569,7 @@ target_link_libraries(OpenGLLessons PRIVATE
 )
 ```
 
-实际使用 `PUBLIC` 还是 `PRIVATE` 必须根据公共头文件和最终链接需求决定。当前入口拆分保持不变：`composition_root/qt_main.cpp` 生成 `EngineeringWorkbench`，`composition_root/lesson_main.cpp` 生成 `OpenGLLessons`。
+实际使用 `PUBLIC` 还是 `PRIVATE` 必须根据公共头文件和最终链接需求决定。当前入口拆分保持不变：`composition_root/workbench/main.cpp` 生成 `EngineeringWorkbench`，`composition_root/opengl_lessons/main.cpp` 生成 `OpenGLLessons`。
 ## 5. CMake 边界规则
 
 - 分层代码目录统一采用“层 / 模块 / include + src”的模块优先结构，例如 `application/camera/include`、`domain/video/include`、`infrastructure/camera/galaxy/include`。
@@ -584,11 +597,11 @@ target_link_libraries(OpenGLLessons PRIVATE
 - 当前学习实现保留原有的 `m_thread + queue + condition_variable + promise/future` 骨架，不额外增加关闭互斥锁或第二层命令包装。Qt 相机页面仍会在创建后自动尝试打开第一台设备并开始采集，也提供按 ID/名称打开、开始/停止/关闭和参数设置控件；UI 只调用 application 请求接口，不接触 Galaxy SDK。
 - 相机 SDK 回调线程不会直接操作 QWidget/OpenGL。`CameraImageCaptureView` 使用互斥锁保护的单槽“最新帧邮箱”，只在没有待执行显示任务时向 Qt 事件队列投递一次；UI 处理不过来时新帧覆盖旧帧，避免逐帧事件无限积压。当前 UI 对控制请求返回的 future 仍立即调用 `.get()`，因此设备操作在控制线程执行，但 UI 会同步等待结果。
 - 大恒相机适配进入 `infrastructure/camera/galaxy`：`GalaxyCameraController` 实现 application 端口，并用 Pimpl 隐藏大恒 SDK 头文件、句柄和回调类，避免 SDK 类型穿透公共头文件。
-- Qt 组合根负责装配：`CameraComposition` 创建大恒适配器，将其作为 `ICameraDevice` 注入 `CameraCaptureService`，再把 service 注入 `CameraImageCaptureView`；`AppComposition` 负责把相机与轨迹页面注册到 `MainWindow`。
+- Qt 组合根负责装配：`CameraComposition` 创建大恒适配器，将其作为 `ICameraDevice` 注入 `CameraCaptureService`，再把 service 注入 `CameraImageCaptureView`；`WorkbenchComposition` 负责把相机与轨迹页面注册到 `MainWindow`。
 - Qt 主窗口已改为左侧导航树和右侧页面栈，后续功能页面优先独立成 QWidget 后注册到导航中。
 - 相机图像显示控件支持水平翻转、垂直翻转、左右 90 度旋转、缩放、平移和重置；这些仍属于 UI 原型交互，由 `DisplayOpenGLImage` 通过 shader uniform 矩阵完成。控件显示形状可在默认矩形与圆形之间切换；圆形外观只通过 QWidget mask 裁剪并露出圆外父窗口背景。圆形模式在渲染前从原始纹理中心裁取最大正方形，并输出到居中的正方形 viewport，再对该 1:1 图像执行观察变换，避免 90 度旋转后因宽高比变化而拉伸。
 - 相机控制线程、任务队列、条件变量、各把锁、原子状态、promise/future、shutdown 和最新帧机制的详细设计见[相机采集与 OpenGL 显示链路](../modules/CAMERA_ARCHITECTURE.md)。本阶段明确不继续拆分 `DisplayOpenGLImage`。
-- LearnOpenGL 课程入口已形成 `LessonRegistry` 和 Qt 课程导航器；`lesson_main.cpp` 只保留命令行选择和启动导航窗口，导航窗口实现放在 `composition_root/lesson_launcher`。
+- LearnOpenGL 课程入口已形成 `LessonRegistry` 和 Qt 课程导航器；`opengl_lessons/main.cpp` 只保留命令行选择和启动导航窗口，导航窗口实现放在 `ui/lesson_launcher`。
 
 本阶段仍然保留的阶段性做法：
 

@@ -6,21 +6,20 @@ find_package(Qt6 6.9 CONFIG REQUIRED COMPONENTS
     Widgets
 )
 
-# Qt/OpenGL 工程原型入口
+# 工作台启动与装配；功能实现由下层 target 提供。
 add_executable(EngineeringWorkbench
-    qt_main.cpp
-    AppComposition.h
-    AppComposition.cpp
-    modules/CameraComposition.h
-    modules/CameraComposition.cpp
-    modules/TrajectoryComposition.h
-    modules/TrajectoryComposition.cpp
+    workbench/main.cpp
+    workbench/WorkbenchComposition.h
+    workbench/WorkbenchComposition.cpp
+    workbench/modules/CameraComposition.h
+    workbench/modules/CameraComposition.cpp
+    workbench/modules/TrajectoryComposition.h
+    workbench/modules/TrajectoryComposition.cpp
 )
 
 target_include_directories(EngineeringWorkbench
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/modules
+        ${CMAKE_CURRENT_SOURCE_DIR}/workbench
 )
 
 target_link_libraries(EngineeringWorkbench
@@ -36,19 +35,14 @@ target_compile_features(EngineeringWorkbench PRIVATE
     cxx_std_17
 )
 
-# LearnOpenGL 课程代码入口
+# 课程程序入口；导航界面是独立 UI target，不依赖工作台 UI。
 add_executable(OpenGLLessons
-    lesson_main.cpp
-    lesson_launcher/include/LessonLauncherWindow.h
-    lesson_launcher/src/LessonLauncherWindow.cpp
-)
-
-target_include_directories(OpenGLLessons PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/lesson_launcher/include
+    opengl_lessons/main.cpp
 )
 
 target_link_libraries(OpenGLLessons PRIVATE
     englab::opengl_lessons
+    englab::lesson_launcher
     Qt6::Widgets
 )
 

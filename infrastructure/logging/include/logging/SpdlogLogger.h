@@ -13,28 +13,30 @@ namespace engineeringlab::infrastructure::logging {
 // 推荐由组合根创建一个 SpdlogLogger，让所有模块通过 LogRecord::component 共用同一个
 // 滚动文件；不要为每个业务模块重复创建指向同一文件的 logger。
 struct SpdlogLoggerOptions {
-    // 出现在日志格式 [%n] 中的应用级 logger 名称，不是业务模块名。
+    // 应用及日志名称。出现在日志格式 [%n] 中的应用级 logger 名称，不是业务模块名。
     std::string loggerName{"EngineeringLab"};
 
-    // 当前进程的主日志文件路径，例如 logs/engineeringlab.log。
+    // 主日志文件路径。当前进程的主日志文件路径，例如 logs/engineeringlab.log。
     std::filesystem::path logFile;
 
-    // 低于该级别的记录会被后端过滤。
+    // 最低输出级别。低于该级别的记录会被后端过滤。
     application::diagnostics::LogLevel minimumLevel{
         application::diagnostics::LogLevel::Info
     };
 
-    // 滚动文件策略：当前文件达到上限后轮转，并按 maxFiles 限制历史文件数量。
+    // 单个文件的轮转大小阈值。滚动文件策略：当前文件达到上限后轮转，并按 maxFiles 限制历史文件数量。
     std::size_t maxFileSizeBytes{10U * 1024U * 1024U};
+    
+    // 保留的历史日志文件数量。
     std::size_t maxFiles{5U};
 
-    // 异步队列按日志条数计数；队列满时实现会阻塞提交线程，避免静默丢失日志。
+    // 异步队列能容纳的日志条数；队列满时实现会阻塞提交线程，避免静默丢失日志。
     std::size_t asyncQueueCapacity{8192U};
 
-    // 开启后，同一条记录还会输出到彩色控制台。
+    // 是否输出到控制台。开启后，同一条记录还会输出到彩色控制台。
     bool enableConsole{false};
 
-    // 默认使用私有后台线程写日志；关闭后由调用线程同步写入。
+    // 是否使用后台线程写日志。默认使用私有后台线程写日志；关闭后由调用线程同步写入。
     bool asynchronous{true};
 };
 

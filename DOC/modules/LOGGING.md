@@ -2,7 +2,7 @@
 
 ## 1. 当前状态
 
-工程已加入日志接口和 spdlog 基础设施实现。`EngineeringWorkbench` 在组合根创建一个进程级 `SpdlogLogger`，经 `AppComposition` 和 `CameraComposition` 按 `ILogger&` 注入 `CameraCaptureService`；服务内部已经持有绑定 `camera` 模块名的 `ModuleLogger`，但当前尚未调用任何日志方法。`OpenGLLessons`、其他 UI/业务模块和命令行工具仍未接入。
+`EngineeringWorkbench` 在组合根创建一个进程级 `SpdlogLogger`，经 `WorkbenchComposition`、`CameraComposition` 和 `TrajectoryComposition` 按 `ILogger&` 注入工作台的全部现有功能对象。各对象持有自己的 `ModuleLogger`，共用同一日志文件；当前只完成注入，尚未新增业务日志调用。独立的 `OpenGLLessons` 入口、命令行工具，以及未装配进工作台的线程池、内存工具不在本次对象图内；domain 纯算法保持无日志依赖。
 
 当前 target：
 
@@ -16,6 +16,8 @@
 ```text
 englab::diagnostics -> fmt::fmt provided by vcpkg (INTERFACE)
 englab::application -> englab::diagnostics
+englab::ui -> englab::diagnostics
+englab::camera_galaxy -> englab::diagnostics
 englab::logging -> englab::diagnostics
 englab::logging -> spdlog::spdlog provided by vcpkg (PRIVATE)
 EngineeringWorkbench -> englab::logging
@@ -77,7 +79,7 @@ Windows preset 使用 `x64-windows-static-md` triplet，保持静态依赖和动
 进程启动时创建一个 logger，并让所有模块共用 `logs/engineeringlab.log`：
 
 ```cpp
-#include "AppComposition.h"
+#include "WorkbenchComposition.h"
 
 #include <logging/SpdlogLogger.h>
 
@@ -94,7 +96,7 @@ options.enableConsole = false;
 options.asynchronous = true;
 
 SpdlogLogger logger(options);
-engineeringlab::composition::AppComposition composition(logger);
+engineeringlab::composition::WorkbenchComposition composition(logger);
 ```
 
 当前综合工作台使用相对于进程工作目录的 `logs/engineeringlab.log`。`logger` 必须比所有消费者活得更久。不要为 `camera`、`trajectory`、`ui` 等模块分别创建指向同一路径的 `SpdlogLogger`；模块来源由每条记录的 `component` 表达。
@@ -182,6 +184,8 @@ target_link_libraries(my_composition_root
 
 ## 5. 当前验证
 
+2026-09-07 扩展到工作台全部现有功能对象后，Debug configure/build 成功，现有 CTest 通过 27/27，其中日志相关 7/7。本机 vcpkg 的 7-Zip 版本检测失败影响标准构建，本次通过进程级 `VCPKG_BINARY_SOURCES=clear` 临时禁用二进制缓存，直接复用已安装依赖完成验证；项目配置未改变。本轮未运行 GUI、真实设备、Release 或 ASan 验证，下方启动冒烟记录属于 2026-09-04 的历史结果。
+
 日志相关测试共包含 7 个用例：
 
 - `ModuleLogger` 绑定模块名并完成 `{}` 参数格式化。
@@ -196,7 +200,22 @@ target_link_libraries(my_composition_root
 
 ## 6. 当前接入边界
 
-当前只接通 `qt_main` → `AppComposition` → `CameraComposition` → `CameraCaptureService` 这一条依赖链。组合根拥有唯一的 `SpdlogLogger`，相机服务只保存 `ModuleLogger("camera")`，没有新增业务日志调用；日志对象晚于窗口及其消费者析构。
+组合根拥有唯一的 `SpdlogLogger`，当前工作台注入关系如下：
+
+| 对象 | component | 注入位置 |
+| --- | --- | --- |
+| `MainWindow` | `ui` | `WorkbenchComposition` 构造主窗口时 |
+| `CameraCaptureService` | `camera` | `CameraComposition` 构造服务时 |
+| `GalaxyCameraControllerImpl` | `camera.galaxy` | `CameraComposition` 经适配器构造函数传入 Pimpl |
+| `CameraImageCaptureView` | `camera.ui` | `CameraComposition` 构造相机页面时 |
+| `DisplayOpenGLImage` | `render` | 相机页面在 `setupUi()` 后调用 `setLogger(logger)` |
+| `TrajectoryExportView` | `trajectory` | `TrajectoryComposition` 构造轨迹页面时 |
+
+除 Designer 提升控件外，各对象使用构造函数注入，在成员函数中可直接调用 `m_log.info("消息 {}", value)`。Galaxy 适配器的 `m_log` 位于 Pimpl 内部，供实际 SDK 实现使用。
+
+`DisplayOpenGLImage` 保留 Designer 要求的 `QWidget*` 构造签名，使用 `std::optional<ModuleLogger>` 在 `setLogger()` 中延迟构造。此方法由相机页面在 UI 线程、首次显示及开始采集前调用；其后可通过 `m_log->info(...)` 使用。若脱离该装配链独立使用控件，必须先注入或在写日志前检查 `m_log` 是否有值。不要在运行期间并发替换后端。
+
+`composition_root/workbench/main.cpp` 中后端先于窗口创建，因此窗口对象树、相机控制线程及轨迹导出任务先结束，后端最后排空日志队列并析构。当前没有新增业务日志调用。
 
 后续为其他模块接入时继续传递同一个 `ILogger&`，由各模块创建不同 component 的 `ModuleLogger`，不要再创建指向同一文件的后端。
 

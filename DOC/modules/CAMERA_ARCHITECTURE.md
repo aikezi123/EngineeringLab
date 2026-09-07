@@ -94,6 +94,8 @@ CameraImageCaptureView
 
 `CameraComposition` 创建 `GalaxyCameraController`，将它按 `ICameraDevice` 类型交给 `CameraCaptureService`，再把 service 交给 `CameraImageCaptureView`。UI 因此只依赖 Application，不需要包含 Galaxy 适配器。
 
+同一个组合根日志后端按 `ILogger&` 注入上述三个对象，分别绑定 `camera.galaxy`、`camera`、`camera.ui`。页面在 `setupUi()` 后将后端注入 Designer 创建的 `DisplayOpenGLImage`，绑定 `render`；后端生命周期覆盖相机线程、页面和显示控件。当前仅完成注入，尚未新增业务日志调用，详见[日志模块](./LOGGING.md)。
+
 对象所有权依次转移：
 
 ```text
@@ -465,4 +467,4 @@ bool m_frameDisplayPending{false};
 - Galaxy adapter：`infrastructure/camera/galaxy/include/camera/galaxy/GalaxyCameraController.h` 与对应 `.cpp`
 - 相机页面：`ui/include/CameraImageCaptureView.h` 与对应 `.cpp`
 - OpenGL 显示控件：`ui/include/DisplayOpenGLImage.h` 与对应 `.cpp`
-- 相机装配：`composition_root/modules/CameraComposition.cpp`
+- 相机装配：`composition_root/workbench/modules/CameraComposition.cpp`

@@ -8,7 +8,7 @@ class ILogger;
 
 namespace engineeringlab::composition {
 
-// 创建相机基础设施实现、Application Service 和对应的 UI 页面。
+// 工作台相机装配：创建基础设施实现、Application Service 和对应的 UI 页面。
 class CameraComposition final {
 public:
     static QWidget* createPage(

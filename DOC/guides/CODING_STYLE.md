@@ -192,8 +192,9 @@ private:
 - Qt 类型只允许出现在 UI 层或明确的外层适配器中。
 - `QWidget`、`QOpenGLWidget`、Qt Designer `.ui`、信号槽和 Qt 事件循环不得进入 domain/application。
 - application 不返回 `QImage`、`QString`、`QWidget`、`QOpenGLWidget` 等 Qt 类型。
-- `composition_root/qt_main.cpp` 只负责创建 `QApplication`、设置必要的 OpenGL 格式、装配顶层窗口并进入事件循环。
-- `composition_root/lesson_main.cpp` 只负责选择和调用课程入口，不放课程内部渲染逻辑。
+- `composition_root/workbench/main.cpp` 只负责初始化 Qt/OpenGL、创建日志后端、调用工作台装配并进入事件循环。
+- `composition_root/opengl_lessons/main.cpp` 只负责解析参数、选择课程或启动导航窗口，不放课程内部渲染逻辑。
+- 工作台总装配位于 `workbench/WorkbenchComposition`，功能装配位于 `workbench/modules`；实际界面实现放在 `ui/`，例如独立的 `ui/lesson_launcher`。
 - 原型阶段可以让 `QOpenGLWidget` 直接管理 Shader、VAO/VBO/EBO、Texture；当逻辑稳定或被多处复用时，应抽到 infrastructure 的 OpenGL 资源封装中。
 - 不同时运行 GLFW 主循环和 Qt 主事件循环。迁移 GLFW 示例到 Qt 时，应明确哪个系统拥有窗口、事件循环和 OpenGL Context。
 

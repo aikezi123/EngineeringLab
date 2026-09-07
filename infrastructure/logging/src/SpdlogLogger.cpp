@@ -83,33 +83,37 @@ public:
     {
         validateOptions(options);
 
-        // 所有 component 共用该滚动文件；component 会在 write() 中写入消息前缀。
+        // stdlog::sink_ptr是指向一个输出目标，例如"写入的文件"或者"输出到控制台"的对象。
         std::vector<spdlog::sink_ptr> sinks;
+        // 增加一个写入文件的对象。
         sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
             toSpdlogFilename(options.logFile),
             options.maxFileSizeBytes,
             options.maxFiles
         ));
 
+        // 如果选择同时输出到控制台，增加控制台输出目标。
         if (options.enableConsole) {
             sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
         }
 
+        // 如果选择异步方式写日志，创建后台线程和异步logger
         if (options.asynchronous) {
             // 使用实例私有线程池，避免依赖或修改 spdlog 的进程级全局线程池。
             m_threadPool = std::make_shared<spdlog::details::thread_pool>(
-                options.asyncQueueCapacity,
-                1U
+                options.asyncQueueCapacity,     // 队列最多容纳多少条任务
+                1U                              // 启动一个后台工作线程 
             );
             m_logger = std::make_shared<spdlog::async_logger>(
-                options.loggerName,
-                sinks.begin(),
-                sinks.end(),
-                m_threadPool,
+                options.loggerName,             // 设置logger名称
+                sinks.begin(),                  // 指定要使用的全部输出目标
+                sinks.end(),                     
+                m_threadPool,                   // 指定处理日志任务的线程池
                 // 队列满时阻塞生产者，优先保证诊断记录完整性。
                 spdlog::async_overflow_policy::block
             );
         }
+        // 如果选择同步，创建普通logger
         else {
             m_logger = std::make_shared<spdlog::logger>(
                 options.loggerName,
@@ -118,9 +122,11 @@ public:
             );
         }
 
+        // 设置最低日志级别
         m_logger->set_level(toSpdlogLevel(options.minimumLevel));
         // Warning 及以上级别立即刷新；其他级别由正常缓冲和析构流程写出。
         m_logger->flush_on(spdlog::level::warn);
+        // 设置每条日志最终格式
         m_logger->set_pattern(
             "%Y-%m-%d %H:%M:%S.%e [%l] [tid %t] [%n] %v"
         );

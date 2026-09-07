@@ -63,21 +63,26 @@ EngineeringWorkbench (executable)
     └── englab::logging
 
 OpenGLLessons (executable)
-    └── englab::opengl_lessons
-        ├── englab::graphics_opengl
-        ├── glad
-        ├── glfw3
-        ├── OpenGL::GL
-        ├── glm::glm
-        └── stb_image
+    ├── englab::opengl_lessons
+    │   ├── englab::graphics_opengl
+    │   ├── glad
+    │   ├── glfw3
+    │   ├── OpenGL::GL
+    │   ├── glm::glm
+    │   └── stb_image
+    └── englab::lesson_launcher
+        ├── Qt6::Widgets
+        └── englab::opengl_lessons (PRIVATE)
 
 englab::ui
     ├── englab::application
     ├── englab::domain
+    ├── englab::diagnostics
     └── Qt/OpenGL UI dependencies
 
 englab::camera_galaxy
     ├── englab::application
+    ├── englab::diagnostics
     └── Galaxy::SDK
 
 englab::application
@@ -95,7 +100,7 @@ englab::logging
     └── spdlog::spdlog（vcpkg，PRIVATE）
 ```
 
-OpenGL 课程不再链接包含相机 SDK 和并发实现的聚合 infrastructure target。OpenGL、Galaxy 相机、线程池和日志分别由 `englab::graphics_opengl`、`englab::camera_galaxy`、`englab::concurrency`、`englab::logging` 表达技术依赖。综合工作台已创建进程级日志后端并注入相机应用服务，当前尚未写业务日志。
+OpenGL 课程不再链接包含相机 SDK 和并发实现的聚合 infrastructure target。OpenGL、Galaxy 相机、线程池和日志分别由 `englab::graphics_opengl`、`englab::camera_galaxy`、`englab::concurrency`、`englab::logging` 表达技术依赖。综合工作台的主界面、相机、显示和轨迹对象已共用组合根的进程级日志后端，当前尚未新增业务日志调用。
 
 C++ 项目代码统一使用 `engineeringlab` 根命名空间；CMake alias 使用较短的 `englab::` 前缀。
 
@@ -106,12 +111,20 @@ C++ 项目代码统一使用 `engineeringlab` 根命名空间；CMake alias 使�
 - `application/camera` 提供 `ICameraDevice` 和 `CameraCaptureService`。
 - `infrastructure/camera/galaxy` 提供大恒相机适配器。
 - `infrastructure/concurrency` 提供固定线程池。
-- `application/diagnostics` 提供日志端口和 `ModuleLogger`；`infrastructure/logging` 提供 spdlog 实现；综合工作台已将唯一后端注入 `CameraCaptureService`，当前尚未写业务日志。
+- `application/diagnostics` 提供日志端口和 `ModuleLogger`；`infrastructure/logging` 提供 spdlog 实现；综合工作台的主窗口、相机服务及适配器、相机页面、图像显示、轨迹导出已注入同一个后端，当前尚未新增业务日志调用。
 - `infrastructure/shader` 提供当前课程使用的 OpenGL Shader 封装。
 - `ui` 提供相机预览、图像观察变换、轨迹生成与导出页面。
 - `lessons` 保留 LearnOpenGL 课程注册和 GLFW 课程实现。
 
 ## 构建入口
+
+源码入口按程序分组：
+
+- [工作台入口](./composition_root/workbench/main.cpp)：初始化 Qt/OpenGL 和日志，再调用 [WorkbenchComposition](./composition_root/workbench/WorkbenchComposition.cpp) 汇总 `workbench/modules/` 中的功能装配。
+- [课程程序入口](./composition_root/opengl_lessons/main.cpp)：解析参数、选择课程或启动导航窗口。
+- [课程导航界面](./ui/lesson_launcher/src/LessonLauncherWindow.cpp)：独立 `englab::lesson_launcher` target，不依赖工作台 UI 或相机模块。
+
+组合根只负责启动与装配；实际界面归入 `ui/`。日志保持显式依赖注入，不引入全局入口或单例。目录职责详见[架构文档](./DOC/architecture/ARCHITECTURE.md)。
 
 fmt 12.1.0、spdlog 1.17.0 和 GoogleTest/GoogleMock 1.17.0 由根目录 `vcpkg.json` 统一管理，版本通过 `builtin-baseline` 固定。构建前需安装 vcpkg 并设置 `VCPKG_ROOT` 环境变量；CMake preset 会使用其 toolchain 自动恢复依赖。Windows preset 使用 `x64-windows-static-md`，即静态第三方库和动态 MSVC CRT。`vcpkg_installed/` 与依赖构建缓存不提交仓库。
 

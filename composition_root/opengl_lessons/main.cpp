@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
     QApplication app(argc, argv);
 
-    engineeringlab::app::LessonLauncherWindow window;
+    engineeringlab::ui::LessonLauncherWindow window;
     window.show();
 
     return app.exec();

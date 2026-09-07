@@ -106,16 +106,14 @@ private:
 
     template <typename... Args>
     void writeFormatted(
-        LogLevel level,
-        fmt::format_string<Args...> format,
-        Args&&... args
+        LogLevel level,                                 // 日志等级
+        fmt::format_string<Args...> format,             // 不同Args...类型的{}占位符
+        Args&&... args                                  // 与占位符相对应的实际参数
     ) const noexcept
     {
         try {
-            const std::string message = fmt::format(
-                format,
-                std::forward<Args>(args)...
-            );
+            // 用完美转发将字符串中的占位符替换为实际参数
+            const std::string message = fmt::format(format, std::forward<Args>(args)...);
             write(level, message);
         }
         catch (...) {

@@ -93,6 +93,11 @@ float normalizedRotationDegrees(float degrees)
 DisplayOpenGLImage::DisplayOpenGLImage(QWidget *parent) : QOpenGLWidget(parent) {
 }
 
+void DisplayOpenGLImage::setLogger(engineeringlab::application::diagnostics::ILogger& logger)
+{
+    m_log.emplace(logger, "render");
+}
+
 DisplayOpenGLImage::~DisplayOpenGLImage()
 {
     // OpenGL 对象只能在所属上下文为 current 时安全删除。

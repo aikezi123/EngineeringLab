@@ -1,4 +1,4 @@
-#include "AppComposition.h"
+#include "WorkbenchComposition.h"
 
 #include <logging/SpdlogLogger.h>
 
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     // 各模块通过 ILogger 引用共享同一个滚动日志文件。
     engineeringlab::infrastructure::logging::SpdlogLogger logger(logOptions);
 
-    engineeringlab::composition::AppComposition composition(logger);
+    engineeringlab::composition::WorkbenchComposition composition(logger);
     std::unique_ptr<QMainWindow> window = composition.createMainWindow();
     window->show();
 

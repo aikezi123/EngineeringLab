@@ -1,8 +1,11 @@
 #pragma once
 
+#include <diagnostics/ModuleLogger.h>
+
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLWidget>
 
+#include <optional>
 #include <vector>
 
 class QResizeEvent;
@@ -27,6 +30,9 @@ public:
 
     // 创建显示控件；OpenGL 资源将在 Qt 随后调用 initializeGL() 时建立。
     explicit DisplayOpenGLImage(QWidget* parent = nullptr);
+    // Designer 使用 QWidget* 构造签名。由页面在 setupUi 后、首次显示前注入，
+    // 仅在 UI 线程调用；后端必须覆盖控件的整个生命周期。
+    void setLogger(engineeringlab::application::diagnostics::ILogger& logger);
     // 在控件的 OpenGL 上下文有效时释放纹理、缓冲区和着色器程序。
     ~DisplayOpenGLImage() override;
 
@@ -89,6 +95,8 @@ private:
     void cleanup();
 
 private:
+    // Designer 创建期间为空，页面装配后可使用 m_log->info(...)。
+    std::optional<engineeringlab::application::diagnostics::ModuleLogger> m_log;
     unsigned int m_vao = 0;           // 纹理矩形的顶点数组对象 ID，记录顶点属性和索引缓冲绑定。
     unsigned int m_vbo = 0;           // 保存顶点位置及纹理坐标的顶点缓冲对象 ID。
     unsigned int m_ebo = 0;           // 保存两个三角形绘制索引的元素缓冲对象 ID。

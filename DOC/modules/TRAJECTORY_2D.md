@@ -1,5 +1,7 @@
 # 二维阿基米德螺旋轨迹
 
+轨迹导出页面由 `TrajectoryComposition` 接收组合根的 `ILogger&` 并传给 `TrajectoryExportView`，页面持有 component 为 `trajectory` 的 `ModuleLogger`，与工作台其他模块共用日志文件。当前仅完成注入，尚未添加日志调用；domain 轨迹算法保持无日志依赖。页面析构等待后台导出任务结束后，组合根才能释放日志后端。
+
 ## 1. 当前实现范围
 
 当前实现位于 `domain/trajectory`：

@@ -18,6 +18,9 @@ EngineeringLab 是个人 C++ 工程技术持续学习与实验平台。图形学
 - 技术 target：`englab::graphics_opengl`、`englab::camera_galaxy`、`englab::concurrency`、`englab::logging`
 - 日志端口 target：`englab::diagnostics`
 - 课程 target：`englab::opengl_lessons`
+- 课程导航 UI target：`englab::lesson_launcher`，独立于工作台 `englab::ui` 和相机模块。
+
+组合根按程序分组：`composition_root/workbench/main.cpp` 创建日志后端并调用 `WorkbenchComposition`，功能装配在 `workbench/modules/`；`composition_root/opengl_lessons/main.cpp` 负责课程程序启动。课程导航界面位于 `ui/lesson_launcher/`。日志继续使用显式 `ILogger&` 注入，不采用全局日志入口。
 
 OpenGL 课程只链接实际使用的 OpenGL、GLFW、GLAD、GLM 和 stb_image 能力，不再通过完整 infrastructure target 间接链接 Galaxy 相机或线程池。
 
@@ -28,10 +31,14 @@ OpenGL 课程只链接实际使用的 OpenGL、GLFW、GLAD、GLM 和 stb_image �
 - `GalaxyCameraController` 实现相机端口，并通过 Pimpl 隐藏大恒 SDK。
 - Qt 相机页面通过最新帧单槽邮箱切回 UI 线程；`DisplayOpenGLImage` 仍负责当前 OpenGL 纹理和观察变换。
 - `englab::concurrency` 提供固定线程池，当前生产代码尚未使用，直接消费者只有测试。
-- `englab::diagnostics` 提供日志端口和支持 fmt `{}` 格式化的 `ModuleLogger`，`englab::logging` 用私有 spdlog 1.17.0 后端实现；`EngineeringWorkbench` 已创建唯一后端并注入 `CameraCaptureService`，当前尚未写业务日志。
+- `englab::diagnostics` 提供日志端口和支持 fmt `{}` 格式化的 `ModuleLogger`，`englab::logging` 用私有 spdlog 1.17.0 后端实现；`EngineeringWorkbench` 的主窗口、相机服务、Galaxy 适配器、相机页面、图像显示和轨迹导出均已注入同一个后端，当前尚未新增业务日志调用。Designer 显示控件在 `setupUi()` 后通过 `setLogger()` 延迟注入，其余使用构造函数注入；模块名映射见 `DOC/modules/LOGGING.md`。
 - `OpenGLLessons` 无参数时打开 Qt 课程导航器，带课程 ID 时运行对应 GLFW 课程。
 
 ## 4. 构建与验证
+
+2026-09-07 组合根目录整理完成：Debug configure/build 成功，CTest 通过 27/27，`OpenGLLessons --list` 正常列出 6 门课程并返回 0。构建使用进程级 `VCPKG_BINARY_SOURCES=clear` 复用已安装依赖，未修改 preset 或全局环境。本轮未运行 GUI、真实相机、Release 或 ASan 验证。
+
+2026-09-07 工作台各模块日志注入完成，Debug configure/build 成功，现有 CTest 通过 27/27（日志相关 7/7）。标准构建首次被本机 vcpkg 的 7-Zip 版本检测失败阻止；依赖已安装，使用进程级 `VCPKG_BINARY_SOURCES=clear` 临时关闭二进制缓存后验证成功，未修改 preset 或全局环境。本轮未运行 GUI、真实设备、Release 或 ASan 验证。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\msvc-cmake.ps1 -Config Debug -NoPause

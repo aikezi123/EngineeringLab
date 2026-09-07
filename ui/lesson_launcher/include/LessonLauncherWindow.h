@@ -11,7 +11,7 @@ class QPushButton;
 class QTreeWidget;
 class QTreeWidgetItem;
 
-namespace engineeringlab::app {
+namespace engineeringlab::ui {
 
 class LessonLauncherWindow final : public QMainWindow {
 public:
@@ -45,4 +45,4 @@ private:
     QString m_currentLessonId;
 };
 
-} // namespace engineeringlab::app
+} // namespace engineeringlab::ui

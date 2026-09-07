@@ -1,5 +1,7 @@
 #pragma once
 
+#include <diagnostics/ModuleLogger.h>
+
 #include <QFutureWatcher>
 #include <QString>
 #include <QWidget>
@@ -19,7 +21,10 @@ namespace engineeringlab::ui {
 
 class TrajectoryExportView final : public QWidget {
 public:
-    explicit TrajectoryExportView(QWidget* parent = nullptr);
+    explicit TrajectoryExportView(
+        application::diagnostics::ILogger& logger,
+        QWidget* parent = nullptr
+    );
     ~TrajectoryExportView() override;
 
 private:
@@ -34,6 +39,8 @@ private:
     void setExportControlsEnabled(bool enabled);
     void setStatusText(const QString& text, bool isError);
 
+    // 页面析构会等待导出任务结束；后端由组合根持有并在页面之后释放。
+    application::diagnostics::ModuleLogger m_log;
     QDoubleSpinBox* m_startRadiusSpin = nullptr;
     QDoubleSpinBox* m_trackSpacingSpin = nullptr;
     QDoubleSpinBox* m_distanceToleranceSpin = nullptr;

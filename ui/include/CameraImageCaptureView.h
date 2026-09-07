@@ -1,5 +1,6 @@
 #pragma once
 
+#include <diagnostics/ModuleLogger.h>
 #include <imageframe/ImageFrame.h>
 
 #include <QWidget>
@@ -21,7 +22,11 @@ class CameraImageCaptureView final : public QWidget {
     Q_OBJECT
 
 public:
-    explicit CameraImageCaptureView(std::unique_ptr<application::CameraCaptureService> cameraCaptureService,QWidget* parent = nullptr);
+    CameraImageCaptureView(
+        std::unique_ptr<application::CameraCaptureService> cameraCaptureService,
+        application::diagnostics::ILogger& logger,
+        QWidget* parent = nullptr
+    );
     ~CameraImageCaptureView() override;
 
 private:
@@ -37,6 +42,8 @@ private:
     );
     void updateCameraControls();
 
+    // 与采集服务、显示控件共用组合根的后端，仅模块名不同。
+    application::diagnostics::ModuleLogger m_log;
     Ui::CameraImageCaptureView* m_ui;
     std::unique_ptr<application::CameraCaptureService> m_cameraCaptureService;
 

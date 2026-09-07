@@ -10,15 +10,15 @@ class ILogger;
 
 namespace engineeringlab::composition {
 
-// 负责创建顶层窗口，并把各功能模块装配到窗口中。
-class AppComposition final {
+// 工作台总装配：创建顶层窗口，并把各功能模块装配到窗口中。
+class WorkbenchComposition final {
 public:
-    explicit AppComposition(application::diagnostics::ILogger& logger) noexcept;
+    explicit WorkbenchComposition(application::diagnostics::ILogger& logger) noexcept;
 
     std::unique_ptr<QMainWindow> createMainWindow() const;
 
 private:
-    // 非拥有引用；qt_main 中的进程级日志后端必须晚于本对象及窗口析构。
+    // 非拥有引用；workbench/main.cpp 中的日志后端必须晚于本对象及窗口析构。
     application::diagnostics::ILogger& m_logger;
 };
 

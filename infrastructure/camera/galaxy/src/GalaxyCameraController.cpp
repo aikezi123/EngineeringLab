@@ -1,5 +1,7 @@
 #include <camera/galaxy/GalaxyCameraController.h>
 
+#include <diagnostics/ModuleLogger.h>
+
 // Galaxy SDK 仅在 Infrastructure 实现文件中使用，避免向上层泄漏厂商类型。
 #include <GalaxyIncludes.h>
 
@@ -74,7 +76,10 @@ class GalaxyCameraControllerImpl final {
 public:
     using FrameCallback = application::ICameraDevice::FrameCallback;
 
-    GalaxyCameraControllerImpl() = default;
+    explicit GalaxyCameraControllerImpl(application::diagnostics::ILogger& logger)
+        : m_log(logger, "camera.galaxy")
+    {
+    }
     ~GalaxyCameraControllerImpl();
 
     GalaxyCameraControllerImpl(const GalaxyCameraControllerImpl&) = delete;
@@ -105,6 +110,7 @@ private:
     void cleanupStream();
     void setLastError(std::string message);
 
+    application::diagnostics::ModuleLogger m_log;
     CGXDevicePointer m_device;
     CGXStreamPointer m_stream;
     CGXFeatureControlPointer m_featureControl;
@@ -649,8 +655,8 @@ void GalaxyCameraControllerImpl::setLastError(std::string message)
     std::cerr << text << std::endl;
 }
 
-GalaxyCameraController::GalaxyCameraController()
-    : m_impl(std::make_unique<GalaxyCameraControllerImpl>())
+GalaxyCameraController::GalaxyCameraController(application::diagnostics::ILogger& logger)
+    : m_impl(std::make_unique<GalaxyCameraControllerImpl>(logger))
 {
 }
 

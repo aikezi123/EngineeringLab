@@ -45,7 +45,7 @@ const engineeringlab::lessons::LessonEntry* findLesson(const QString& id)
 
 } // namespace
 
-namespace engineeringlab::app {
+namespace engineeringlab::ui {
 
 LessonLauncherWindow::LessonLauncherWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -463,4 +463,4 @@ void LessonLauncherWindow::appendLine(const QString& text)
     m_outputText->appendPlainText(text.trimmed());
 }
 
-} // namespace engineeringlab::app
+} // namespace engineeringlab::ui

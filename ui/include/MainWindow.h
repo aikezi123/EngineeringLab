@@ -1,5 +1,7 @@
 #pragma once
 
+#include <diagnostics/ModuleLogger.h>
+
 #include <QMainWindow>
 
 class QTreeWidgetItem;
@@ -17,7 +19,7 @@ class MainWindow final : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    explicit MainWindow(application::diagnostics::ILogger& logger, QWidget* parent = nullptr);
     ~MainWindow() override;
 
     // 将装配层创建好的功能页面注册到指定导航分类。
@@ -43,6 +45,8 @@ private:
     QWidget* createHomePage();
     void decorateChildNodeUI(QTreeWidgetItem* item);
 
+    // 非拥有后端引用；组合根保证 logger 晚于整个窗口对象树析构。
+    application::diagnostics::ModuleLogger m_log;
     Ui::MainWindow* m_ui;
 };
 

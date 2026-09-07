@@ -21,10 +21,19 @@
 
 namespace engineeringlab::ui {
 
-CameraImageCaptureView::CameraImageCaptureView(std::unique_ptr<application::CameraCaptureService> cameraCaptureService,QWidget* parent)
-    : QWidget(parent) , m_ui(new Ui::CameraImageCaptureView) , m_cameraCaptureService(std::move(cameraCaptureService))
+CameraImageCaptureView::CameraImageCaptureView(
+    std::unique_ptr<application::CameraCaptureService> cameraCaptureService,
+    application::diagnostics::ILogger& logger,
+    QWidget* parent
+)
+    : QWidget(parent)
+    , m_log(logger, "camera.ui")
+    , m_ui(new Ui::CameraImageCaptureView)
+    , m_cameraCaptureService(std::move(cameraCaptureService))
 {
     m_ui->setupUi(this);
+    // Designer 先创建提升控件；在显示窗口及开始采集前注入同一个后端。
+    m_ui->widget->setLogger(logger);
     connectViewControls();
     updateCameraControls();
 

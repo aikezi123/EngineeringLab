@@ -41,6 +41,7 @@ target_include_directories(engineeringlab_camera_galaxy
 target_link_libraries(engineeringlab_camera_galaxy
     PUBLIC
         englab::application
+        englab::diagnostics
     PRIVATE
         Galaxy::SDK
 )

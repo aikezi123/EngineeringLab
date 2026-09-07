@@ -14,7 +14,8 @@ QWidget* CameraComposition::createPage(
     QWidget* parent
 )
 {
-    auto cameraDevice = std::make_unique<infrastructure::camera::galaxy::GalaxyCameraController>();
+    auto cameraDevice =
+        std::make_unique<infrastructure::camera::galaxy::GalaxyCameraController>(logger);
 
     auto cameraCaptureService =
         std::make_unique<application::CameraCaptureService>(
@@ -24,6 +25,7 @@ QWidget* CameraComposition::createPage(
 
     return new ui::CameraImageCaptureView(
         std::move(cameraCaptureService),
+        logger,
         parent
     );
 }

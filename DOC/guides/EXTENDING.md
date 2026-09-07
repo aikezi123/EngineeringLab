@@ -53,7 +53,7 @@ assets/
 
 当前 `lessons/CMakeLists.txt` 使用 `GLOB_RECURSE ... CONFIGURE_DEPENDS`，新增 `.cpp` 通常会触发重新配置。目标架构迁移后应改成显式 target 和源文件列表。
 
-当前 `OpenGLLessons.exe` 不带参数会打开 Qt 课程导航器；选择课程后，导航器通过子进程传入课程 ID 来运行对应 GLFW 课程窗口。导航窗口代码位于 `composition_root/lesson_launcher`，`lesson_main.cpp` 只保留参数解析、直接运行课程和启动导航窗口。传入课程 ID 时仍可直接运行课程，例如 `OpenGLLessons.exe transform`；`--list` 可查看已注册课程。
+当前 `OpenGLLessons.exe` 不带参数会打开 Qt 课程导航器；选择课程后，导航器通过子进程传入课程 ID 来运行对应 GLFW 课程窗口。导航窗口代码位于 `ui/lesson_launcher`，使用独立的 `englab::lesson_launcher` target；`composition_root/opengl_lessons/main.cpp` 只保留参数解析、直接运行课程和启动导航窗口。传入课程 ID 时仍可直接运行课程，例如 `OpenGLLessons.exe transform`；`--list` 可查看已注册课程。
 
 ## 3. 目标阶段新增课程
 
@@ -138,7 +138,7 @@ application/
 4. 把与 UI/API 无关的数据模型放入 domain，例如帧尺寸、像素格式、点云点、轨迹段、相机内参等。
 5. `composition_root` 负责把 Qt UI、OpenGL 适配器、相机适配器和 application service 装配起来。
 
-当前 Qt 主窗口使用左侧 `QTreeWidget` 导航和右侧 `QStackedWidget` 页面容器。新增 UI 页面时，优先把页面实现为独立 QWidget，再在 `MainWindow::initPages()` 中通过导航节点注册，不要继续把多个功能直接堆到同一个窗口控件里。
+当前 Qt 主窗口使用左侧 `QTreeWidget` 导航和右侧 `QStackedWidget` 页面容器。新增 UI 页面时，优先把页面实现为独立 QWidget，在 `composition_root/workbench/modules` 创建对应装配，再由 `WorkbenchComposition` 调用 `MainWindow::addBusinessPage()` 注册。主窗口不负责创建具体功能对象；日志继续通过 `ILogger&` 显式注入。
 
 拆分过程中保持每一步可构建、可运行，不一次性重写全部原型。
 
@@ -318,7 +318,7 @@ assets/
 
 - 每个课程或章节建立独立 target。
 - 增加课程注册表和命令行选择。
-- 移除 `lesson_main.cpp` 对所有课程头文件的直接包含，改为更明确的课程注册机制。
+- 课程注册机制已集中到 `LessonRegistry`；`composition_root/opengl_lessons/main.cpp` 通过注册表选择课程，后续按独立 target 继续拆分。
 
 验收结果：一个课程损坏不会阻止无关课程被单独构建和测试。
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <camera/ICameraDevice.h>
+#include <diagnostics/ILogger.h>
 
 #include <memory>
 #include <string>
@@ -11,7 +12,8 @@ class GalaxyCameraControllerImpl;
 
 class GalaxyCameraController final : public application::ICameraDevice {
 public:
-    GalaxyCameraController();
+    // 后端由组合根持有，必须晚于设备及其 SDK 回调析构。
+    explicit GalaxyCameraController(application::diagnostics::ILogger& logger);
     ~GalaxyCameraController() override;
 
     GalaxyCameraController(const GalaxyCameraController&) = delete;

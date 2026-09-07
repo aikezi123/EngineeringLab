@@ -13,8 +13,9 @@
 
 namespace engineeringlab::ui {
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(application::diagnostics::ILogger& logger, QWidget* parent)
     : QMainWindow(parent)
+    , m_log(logger, "ui")
     , m_ui(new Ui::MainWindow)
 {
     m_ui->setupUi(this);

@@ -244,8 +244,12 @@ ExportCompletion runTrajectoryExport(
 
 } // namespace
 
-TrajectoryExportView::TrajectoryExportView(QWidget* parent)
+TrajectoryExportView::TrajectoryExportView(
+    application::diagnostics::ILogger& logger,
+    QWidget* parent
+)
     : QWidget(parent)
+    , m_log(logger, "trajectory")
     , m_exportWatcher(new QFutureWatcher<ExportCompletion>(this))
     , m_cancelExport(std::make_shared<std::atomic_bool>(false))
 {
