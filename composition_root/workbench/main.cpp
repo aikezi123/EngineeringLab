@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     // 进程只创建一个日志后端。它的生命周期覆盖窗口及其持有的全部业务对象，
     // 各模块通过 ILogger 引用共享同一个滚动日志文件。
     engineeringlab::infrastructure::logging::SpdlogLogger logger(logOptions);
-
+    // 把唯一的 logger对象交给工作台装配对象。
     engineeringlab::composition::WorkbenchComposition composition(logger);
     std::unique_ptr<QMainWindow> window = composition.createMainWindow();
     window->show();
