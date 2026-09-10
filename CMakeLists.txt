@@ -20,6 +20,35 @@ option(
     OFF
 )
 
+# 定义一个保存在 CMakeCache.txt 中的布尔开关：变量名、说明文字、默认值。
+# OFF 只在尚未设置该变量时作为默认值；preset 或 -D 传入的 ON 不会被覆盖。
+# 当前 Windows Debug/Release preset 将它设为 ON，ASan preset 将它设为 OFF。
+option(ENGINEERINGLAB_ENABLE_CUDA "Build CUDA examples" OFF)
+
+# 开关为 ON 时才配置 CUDA；为 OFF 时跳过这一整段，不检测 CUDA 编译器或 Toolkit。
+if(ENGINEERINGLAB_ENABLE_CUDA)
+    # 本项目目前的 MSVC ASan 参数是全局设置，尚未适配 CUDA 编译。
+    # 这是当前工程的配置限制，不表示 CUDA 与所有内存检查工具都不能共存。
+    if(ENGINEERINGLAB_ENABLE_ASAN)
+        # FATAL_ERROR 会立即终止 CMake 配置，避免之后出现难以理解的编译错误。
+        message(FATAL_ERROR "CUDA examples do not support the current MSVC AddressSanitizer configuration. Set ENGINEERINGLAB_ENABLE_CUDA=OFF.")
+    endif()
+
+    # project() 原先只启用了 C/C++；这里增加 CUDA 语言并检测 nvcc 及宿主编译器。
+    # 启用后，target 源文件列表里的 .cu 可以按 CUDA 源码编译。
+    enable_language(CUDA)
+
+    # 查找已安装的 Toolkit，不负责下载；12.6 是最低版本，REQUIRED 表示找不到就报错。
+    # 查找成功后提供 CUDA::cudart、CUDA::cudart_static 等导入 target，携带头文件和库信息。
+    find_package(CUDAToolkit 12.6 REQUIRED)
+
+    # 为之后创建的 target 设置 CUDA 源码的默认 C++ 语言标准：C++17。
+    # 这里的 17 不是 CUDA Toolkit 的版本号；CMAKE_CXX_STANDARD 不替代此设置。
+    set(CMAKE_CUDA_STANDARD 17)
+    # 必须支持所选标准，不能因编译器能力不足而自动退回较低标准。
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+endif()
+
 if(ENGINEERINGLAB_ENABLE_ASAN)
     if(NOT MSVC)
         message(FATAL_ERROR "ENGINEERINGLAB_ENABLE_ASAN currently supports the MSVC toolchain only.")
@@ -35,7 +64,10 @@ endif()
 
 # MSVC 使用 UTF-8，避免中文注释或字符串导致 C4819
 if (MSVC)
-    add_compile_options(/utf-8)
+    add_compile_options(
+        "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>"
+    )
 endif()
 
 # 把 third_party/glad 子目录加入构建系统

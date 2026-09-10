@@ -22,6 +22,7 @@ EngineeringLab 是个人 C++ 工程技术持续学习与实验平台。工程以
 - [编码规范](./DOC/guides/CODING_STYLE.md)
 - [扩展指南](./DOC/guides/EXTENDING.md)
 - [自动化测试](./DOC/guides/TESTING.md)
+- [Windows CUDA 配置与验证](./DOC/guides/CUDA_WINDOWS.md)
 
 ### Agent 协作入口
 
@@ -56,6 +57,9 @@ CAD、机器人、视觉和图形学可以同时使用多个层与能力目录�
 ## 当前 CMake target
 
 ```text
+CudaSmoke (executable，ENGINEERINGLAB_ENABLE_CUDA=ON)
+    └── CUDA::cudart_static (PRIVATE)
+
 EngineeringWorkbench (executable)
     ├── englab::ui
     ├── englab::application
@@ -128,6 +132,8 @@ C++ 项目代码统一使用 `engineeringlab` 根命名空间；CMake alias 使�
 
 fmt 12.1.0、spdlog 1.17.0 和 GoogleTest/GoogleMock 1.17.0 由根目录 `vcpkg.json` 统一管理，版本通过 `builtin-baseline` 固定。构建前需安装 vcpkg 并设置 `VCPKG_ROOT` 环境变量；CMake preset 会使用其 toolchain 自动恢复依赖。Windows preset 使用 `x64-windows-static-md`，即静态第三方库和动态 MSVC CRT。`vcpkg_installed/` 与依赖构建缓存不提交仓库。
 
+Windows Debug/Release preset 同时启用独立的 `CudaSmoke` 示例，要求系统安装 CUDA Toolkit 12.6 或更新的兼容版本，并设置 `CUDA_PATH`。默认 GPU 架构为 `75`（RTX 2060）；使用其他 GPU 时应覆盖该参数。CUDA 使用 C++17 和静态 CUDA Runtime，不改变 MSVC CRT 设置；工作台和 OpenGL 课程不链接 CUDA。安装、禁用及运行方法见 [Windows CUDA 指南](./DOC/guides/CUDA_WINDOWS.md)。
+
 Debug：
 
 ```powershell
@@ -160,4 +166,10 @@ ctest --preset ninja-msvc-debug --output-on-failure
 .\out\build\ninja-msvc-debug\bin\OpenGLLessons.exe --list
 ```
 
-ASan preset 使用 `ENGINEERINGLAB_ENABLE_ASAN`，构建产物仍位于 `out/build/<preset>/bin`。
+运行 CUDA 验证示例：
+
+```powershell
+.\out\build\ninja-msvc-debug\bin\CudaSmoke.exe
+```
+
+ASan preset 使用 `ENGINEERINGLAB_ENABLE_ASAN` 并关闭 CUDA，构建产物仍位于 `out/build/<preset>/bin`。

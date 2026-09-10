@@ -18,7 +18,7 @@
     {
       "name": "ninja-msvc-debug",
       "displayName": "Ninja + MSVC Debug",
-      "description": "使用 Ninja 和 MSVC 生成 Debug 构建目录，同时导出 compile_commands.json。",
+      "description": "Ninja + MSVC Debug，导出 compile_commands.json。cacheVariables 相当于配置时传入 -D变量=值：ENGINEERINGLAB_ENABLE_CUDA=ON 开启项目 CUDA；$env{CUDA_PATH} 读取环境变量并拼接 nvcc 路径；CMAKE_CUDA_ARCHITECTURES=75 指定 GPU 计算能力 7.5（RTX 2060），不是 Toolkit 版本。",
       "inherits": "vcpkg-msvc-x64",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
@@ -26,13 +26,16 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE",
         "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
+        "CMAKE_CXX_COMPILER": "cl",
+        "ENGINEERINGLAB_ENABLE_CUDA": "ON",
+        "CMAKE_CUDA_COMPILER": "$env{CUDA_PATH}/bin/nvcc.exe",
+        "CMAKE_CUDA_ARCHITECTURES": "75"
       }
     },
     {
       "name": "ninja-msvc-release",
       "displayName": "Ninja + MSVC Release",
-      "description": "使用 Ninja 和 MSVC 生成启用优化的 Release 构建目录。",
+      "description": "Ninja + MSVC Release，启用优化。与 Debug 相同，ON 开启 CUDA，$env{CUDA_PATH}/bin/nvcc.exe 指定 CUDA 编译器，75 指定 GPU 计算能力 7.5；Toolkit 安装目录由本机环境变量提供。",
       "inherits": "vcpkg-msvc-x64",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
@@ -40,17 +43,23 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE",
         "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
+        "CMAKE_CXX_COMPILER": "cl",
+        "ENGINEERINGLAB_ENABLE_CUDA": "ON",
+        "CMAKE_CUDA_COMPILER": "$env{CUDA_PATH}/bin/nvcc.exe",
+        "CMAKE_CUDA_ARCHITECTURES": "75"
       }
     },
     {
       "name": "ninja-msvc-asan",
       "displayName": "Ninja + MSVC AddressSanitizer",
-      "description": "继承 Debug 配置并启用 AddressSanitizer，用于检查内存错误。",
+      "description": "inherits 继承 Debug，当前 cacheVariables 覆盖同名配置：开启 ASan、关闭 CUDA。null 表示此 preset 不再设置从 Debug 继承的 CUDA 编译器和架构值；它不是字符串，也不负责删除已有 CMakeCache.txt 中的条目。",
       "inherits": "ninja-msvc-debug",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
-        "ENGINEERINGLAB_ENABLE_ASAN": "ON"
+        "ENGINEERINGLAB_ENABLE_ASAN": "ON",
+        "ENGINEERINGLAB_ENABLE_CUDA": "OFF",
+        "CMAKE_CUDA_COMPILER": null,
+        "CMAKE_CUDA_ARCHITECTURES": null
       }
     }
   ],

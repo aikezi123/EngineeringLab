@@ -1,3 +1,7 @@
+if(ENGINEERINGLAB_ENABLE_CUDA)
+    add_subdirectory(cuda)
+endif()
+
 # 收集 lessons 下所有子目录中的 src/*.cpp 文件
 # GLOB_RECURSE       : 递归遍历，进入所有子文件夹查找文件
 # CONFIGURE_DEPENDS  : 当新增/删除匹配文件时，CMake 会尝试自动重新配置

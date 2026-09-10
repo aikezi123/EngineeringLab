@@ -36,6 +36,8 @@ OpenGL 课程只链接实际使用的 OpenGL、GLFW、GLAD、GLM 和 stb_image �
 
 ## 4. 构建与验证
 
+2026-09-10 Windows CUDA 接入完成：Debug/Release preset 启用 ENGINEERINGLAB_ENABLE_CUDA，使用 CUDA_PATH 定位 nvcc，GPU 架构为 75；ASan preset 关闭 CUDA。独立 CudaSmoke 位于 lessons/cuda，使用静态 CUDA Runtime，不向现有工作台或 OpenGL 课程传播依赖。Debug configure/build 成功，GPU 校验通过 257/257，现有 CTest 通过 27/27；构建使用进程级 VCPKG_BINARY_SOURCES=clear。未执行 Release、ASan 构建或 GUI 验证。配置与边界见 DOC/guides/CUDA_WINDOWS.md。
+
 2026-09-07 组合根目录整理完成：Debug configure/build 成功，CTest 通过 27/27，`OpenGLLessons --list` 正常列出 6 门课程并返回 0。构建使用进程级 `VCPKG_BINARY_SOURCES=clear` 复用已安装依赖，未修改 preset 或全局环境。本轮未运行 GUI、真实相机、Release 或 ASan 验证。
 
 2026-09-07 工作台各模块日志注入完成，Debug configure/build 成功，现有 CTest 通过 27/27（日志相关 7/7）。标准构建首次被本机 vcpkg 的 7-Zip 版本检测失败阻止；依赖已安装，使用进程级 `VCPKG_BINARY_SOURCES=clear` 临时关闭二进制缓存后验证成功，未修改 preset 或全局环境。本轮未运行 GUI、真实设备、Release 或 ASan 验证。

@@ -21,6 +21,8 @@
 
 ## 2. 当前阶段新增课程
 
+CUDA 示例位于 `lessons/cuda`，使用独立的 `CudaSmoke` target 和显式 `.cu` 源文件列表，不进入下述 OpenGL `.cpp` 收集及课程注册流程。新增 CUDA 代码请从 [Windows CUDA 配置与验证](./CUDA_WINDOWS.md) 进入。
+
 在整洁架构迁移完成前，可以沿用现有 lessons 组织方式。
 
 建议目录：

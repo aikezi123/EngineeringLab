@@ -58,6 +58,7 @@ EngineeringLab 是个人 C++ 工程技术持续学习与实验平台。LearnOpen
 | --- | --- | --- | --- |
 | `EngineeringWorkbench` | Executable | Qt 综合学习工作台与对象装配 | `englab::ui`、`englab::application`、`englab::camera_galaxy`、`englab::logging`、Qt6 Widgets |
 | `OpenGLLessons` | Executable | LearnOpenGL 课程导航器与课程入口 | `englab::opengl_lessons`、`englab::lesson_launcher`、Qt6 Widgets |
+| `CudaSmoke` | Executable（可选） | CUDA 显存传输、kernel 执行和结果校验示例 | 系统 Toolkit 的 `CUDA::cudart_static`（PRIVATE） |
 | `engineeringlab_lesson_launcher` | Static | Qt 课程导航界面与课程子进程控制 | Qt6 Widgets（PUBLIC）、`englab::opengl_lessons`（PRIVATE） |
 | `engineeringlab_opengl_lessons` | Static | 收集并编译当前 OpenGL 课程 | `englab::graphics_opengl`、GLAD、GLFW、OpenGL、GLM、stb_image |
 | `engineeringlab_ui` | Static | Qt/OpenGL 显示原型、相机与轨迹页面 | `englab::application`、`englab::domain`、`englab::diagnostics`、Qt/OpenGL UI 依赖 |
@@ -70,6 +71,8 @@ EngineeringLab 是个人 C++ 工程技术持续学习与实验平台。LearnOpen
 | `engineeringlab_domain` | Static | 图像帧模型和二维轨迹纯算法 | 无项目内依赖 |
 
 `tests/` 位于生产模块之外，只允许单向依赖被测 target。测试 target 使用 `engineeringlab_` 前缀，并通过 `engineeringlab_add_gtest()` 注册。
+
+CUDA 当前仅接入 Windows 构建：顶层通过 `ENGINEERINGLAB_ENABLE_CUDA` 启用 CUDA 语言并查找系统 CUDA Toolkit，`lessons/CMakeLists.txt` 条件加载 `lessons/cuda`，由其定义独立 `CudaSmoke` 可执行程序。它不进入 OpenGL 课程注册表，也不向工作台、domain 或 application 传播 CUDA 依赖。Windows Debug/Release preset 启用 CUDA，ASan preset 关闭 CUDA；当前禁止同时启用 CUDA 和 MSVC ASan。CUDA `.cu` 使用 C++17，MSVC UTF-8 参数通过 NVCC 转发。具体配置与验证见 [Windows CUDA 指南](../guides/CUDA_WINDOWS.md)。Linux 移植尚未实施。
 
 OpenGL、Galaxy 相机和线程池不再被聚合进单一 `infrastructure` 静态库。拆分的目的只是隔离技术依赖，不表示图形学、视觉、CAD 或机器人被定义为互相独立的业务模块。
 

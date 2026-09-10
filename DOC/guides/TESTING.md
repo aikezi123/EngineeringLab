@@ -77,6 +77,8 @@ engineeringlab_add_gtest(engineeringlab_domain_trajectory_tests
 
 ## 4. 配置、构建和运行
 
+Windows Debug/Release preset 会构建 `CudaSmoke`，因此需要安装系统 CUDA Toolkit 并设置 `CUDA_PATH`。没有 Toolkit 时可覆盖 `ENGINEERINGLAB_ENABLE_CUDA=OFF`。GPU 验证单独运行 `out/build/ninja-msvc-debug/bin/CudaSmoke.exe`，未注册为 CTest，以免普通单元测试要求真实 GPU；其结果不计入 CTest 用例数。ASan preset 明确关闭 CUDA。详细步骤见 [Windows CUDA 指南](./CUDA_WINDOWS.md)。
+
 `BUILD_TESTING` 默认值为 `ON`。仓库的 `CMakePresets.json` 为 Debug、Release 和 AddressSanitizer 分别定义了 configure、build 和 test preset；Windows preset 通过 `VCPKG_ROOT` 加载 vcpkg toolchain，并使用 `x64-windows-static-md` triplet。VS Code 工作区固定使用这些 presets，并由 CMake Tools 自动尝试加载 MSVC Developer Environment。
 
 日常开发推荐在 VS Code 命令面板中依次选择：
